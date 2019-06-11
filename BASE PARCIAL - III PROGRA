@@ -179,7 +179,24 @@ go
 
 --Procedimiento Almacenado #4: cuando se ingrese un nuevo cupon de descuento, notifique mediante un correo electrónico a todos los clientes para los cuales está disponible el cupón
 
+CREATE PROCEDURE notificacionCuponNuevo
+  @nuevoCupon int,
+  @disponibilidadCupon varchar(30),
+  @myRecipientList varchar(max),
+AS
+  SET @myRecipientList = STUFF((SELECT ';' + email 
+    FROM nombreBase.cliente 
+    WHERE @disponibilidadCupon = categoria FOR XML PATH('')),1,1,''),
+  EXEC msdb.dbo.sp_send_dbmail  
+    @profile_name = 'Administración de la Tienda', --emisor del correo
+    @recipients = @myRecipientList, --lista de correos seleccionado
+    @query = 'SELECT idCuponDescuento
+              FROM nombreBase.cuponDescuento 
+              WHERE @nuevoCupon = idCuponDescuento, 
+    @body = 'HAY DISPONIBLE UN NUEVO CUPON DE DESCUENTO QUE PUEDE APLICAR', --mensaje del correo
+    @subject = 'NOTIFICACION DE CUPONES DE DESCUENTO',  --asunto del correo
+    @attach_query_result_as_file = 0 ; --es cero porque lo que se quiere enviar en el mensaje y no la consulta
 
-DECLARE @myRecipientList varchar(max) SET @myRecipientList = (STUFF((SELECT ';' + emailaddress FROM table FOR XML PATH('')),1,1,'')) 
-EXEC msdb.dbo.sp_send_dbmail @recipients = @recipientList, @subject = @subject, @body = @body // ........ 
-DECLARE @myRecipientList varchar(max) SET @myRecipientList = STUFF((SELECT ';' + email FROM emailTable WHERE idNumber = @idNumber FOR XML PATH('')),1,1,'') 
+--otra opción para el procedimiento
+
+
